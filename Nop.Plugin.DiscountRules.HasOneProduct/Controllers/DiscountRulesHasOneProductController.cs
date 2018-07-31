@@ -147,7 +147,7 @@ namespace Nop.Plugin.DiscountRules.HasOneProduct.Controllers
             model.AvailableCategories.Add(new SelectListItem { Text = _localizationService.GetResource("Admin.Common.All"), Value = "0" });
             var categories = _categoryService.GetAllCategories(showHidden: true);
             foreach (var category in categories)
-                model.AvailableCategories.Add(new SelectListItem { Text = category.GetFormattedBreadCrumb(categories), Value = category.Id.ToString() });
+                model.AvailableCategories.Add(new SelectListItem { Text = _categoryService.GetFormattedBreadCrumb(category), Value = category.Id.ToString() });
 
             //manufacturers
             model.AvailableManufacturers.Add(new SelectListItem { Text = _localizationService.GetResource("Admin.Common.All"), Value = "0" });
