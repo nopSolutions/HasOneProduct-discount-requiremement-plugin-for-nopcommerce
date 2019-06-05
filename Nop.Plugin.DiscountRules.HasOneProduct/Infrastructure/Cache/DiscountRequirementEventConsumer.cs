@@ -11,7 +11,7 @@ namespace Nop.Plugin.DiscountRules.HasOneProduct.Infrastructure.Cache
     public partial class DiscountRequirementEventConsumer : IConsumer<EntityDeletedEvent<DiscountRequirement>>
     {
         #region Fields
-        
+
         private readonly ISettingService _settingService;
 
         #endregion
@@ -20,7 +20,7 @@ namespace Nop.Plugin.DiscountRules.HasOneProduct.Infrastructure.Cache
 
         public DiscountRequirementEventConsumer(ISettingService settingService)
         {
-            this._settingService = settingService;
+            _settingService = settingService;
         }
 
         #endregion

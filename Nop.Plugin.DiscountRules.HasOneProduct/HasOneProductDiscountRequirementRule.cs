@@ -1,15 +1,15 @@
-using System;
+﻿using System;
 using System.Linq;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.AspNetCore.Mvc.Routing;
+using Nop.Core;
 using Nop.Core.Domain.Orders;
-using Nop.Core.Plugins;
 using Nop.Services.Configuration;
 using Nop.Services.Discounts;
 using Nop.Services.Localization;
 using Nop.Services.Orders;
+using Nop.Services.Plugins;
 
 namespace Nop.Plugin.DiscountRules.HasOneProduct
 {
@@ -21,7 +21,9 @@ namespace Nop.Plugin.DiscountRules.HasOneProduct
         private readonly IDiscountService _discountService;
         private readonly ILocalizationService _localizationService;
         private readonly ISettingService _settingService;
+        private readonly IShoppingCartService _shoppingCartService;
         private readonly IUrlHelperFactory _urlHelperFactory;
+        private readonly IWebHelper _webHelper;
 
         #endregion
 
@@ -31,13 +33,17 @@ namespace Nop.Plugin.DiscountRules.HasOneProduct
             IDiscountService discountService,
             ILocalizationService localizationService,
             ISettingService settingService,
-            IUrlHelperFactory urlHelperFactory)
+            IShoppingCartService shoppingCartService,
+            IUrlHelperFactory urlHelperFactory,
+            IWebHelper webHelper)
         {
-            this._actionContextAccessor = actionContextAccessor;
-            this._discountService = discountService;
-            this._localizationService = localizationService;
-            this._settingService = settingService;
-            this._urlHelperFactory = urlHelperFactory;
+            _actionContextAccessor = actionContextAccessor;
+            _discountService = discountService;
+            _localizationService = localizationService;
+            _settingService = settingService;
+            _shoppingCartService = shoppingCartService;
+            _urlHelperFactory = urlHelperFactory;
+            _webHelper = webHelper;
         }
 
         #endregion
@@ -78,21 +84,17 @@ namespace Nop.Plugin.DiscountRules.HasOneProduct
             var restrictedProducts = restrictedProductIds.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).Select(x => x.Trim()).ToList();
             if (!restrictedProducts.Any())
                 return result;
-            
+
             //group products in the cart by product ID
             //it could be the same product with distinct product attributes
-            //that's why we get the total quantity of this product
-            var cartQuery = from sci in request.Customer.ShoppingCartItems.LimitPerStore(request.Store.Id)
-                            where sci.ShoppingCartType == ShoppingCartType.ShoppingCart
-                            group sci by sci.ProductId into g
-                            select new {ProductId = g.Key, TotalQuantity = g.Sum(x => x.Quantity)};
-            var cart = cartQuery.ToList();
+            //that's why we get the total quantity of this product            
+            var cart = _shoppingCartService.GetShoppingCart(customer: request.Customer, shoppingCartType: ShoppingCartType.ShoppingCart, storeId: request.Store.Id);
 
             //process
-            bool found = false;
+            var found = false;
             foreach (var restrictedProduct in restrictedProducts)
             {
-                if (String.IsNullOrWhiteSpace(restrictedProduct))
+                if (string.IsNullOrWhiteSpace(restrictedProduct))
                     continue;
 
                 foreach (var sci in cart)
@@ -103,17 +105,17 @@ namespace Nop.Plugin.DiscountRules.HasOneProduct
                         {
                             //the third way (the quantity rage specified)
                             //{Product ID}:{Min quantity}-{Max quantity}. For example, 77:1-3, 123:2-5, 156:3-8
-                            if (!int.TryParse(restrictedProduct.Split(new[] { ':' })[0], out int restrictedProductId))
+                            if (!int.TryParse(restrictedProduct.Split(new[] { ':' })[0], out var restrictedProductId))
                                 //parsing error; exit;
                                 return result;
-                            if (!int.TryParse(restrictedProduct.Split(new[] { ':' })[1].Split(new[] { '-' })[0], out int quantityMin))
+                            if (!int.TryParse(restrictedProduct.Split(new[] { ':' })[1].Split(new[] { '-' })[0], out var quantityMin))
                                 //parsing error; exit;
                                 return result;
-                            if (!int.TryParse(restrictedProduct.Split(new[] { ':' })[1].Split(new[] { '-' })[1], out int quantityMax))
+                            if (!int.TryParse(restrictedProduct.Split(new[] { ':' })[1].Split(new[] { '-' })[1], out var quantityMax))
                                 //parsing error; exit;
                                 return result;
 
-                            if (sci.ProductId == restrictedProductId && quantityMin <= sci.TotalQuantity && sci.TotalQuantity <= quantityMax)
+                            if (sci.ProductId == restrictedProductId && quantityMin <= sci.Quantity && sci.Quantity <= quantityMax)
                             {
                                 found = true;
                                 break;
@@ -123,14 +125,14 @@ namespace Nop.Plugin.DiscountRules.HasOneProduct
                         {
                             //the second way (the quantity specified)
                             //{Product ID}:{Quantity}. For example, 77:1, 123:2, 156:3
-                            if (!int.TryParse(restrictedProduct.Split(new[] { ':' })[0], out int restrictedProductId))
+                            if (!int.TryParse(restrictedProduct.Split(new[] { ':' })[0], out var restrictedProductId))
                                 //parsing error; exit;
                                 return result;
-                            if (!int.TryParse(restrictedProduct.Split(new[] { ':' })[1], out int quantity))
+                            if (!int.TryParse(restrictedProduct.Split(new[] { ':' })[1], out var quantity))
                                 //parsing error; exit;
                                 return result;
 
-                            if (sci.ProductId == restrictedProductId && sci.TotalQuantity == quantity)
+                            if (sci.ProductId == restrictedProductId && sci.Quantity == quantity)
                             {
                                 found = true;
                                 break;
@@ -140,7 +142,7 @@ namespace Nop.Plugin.DiscountRules.HasOneProduct
                     else
                     {
                         //the first way (the quantity is not specified)
-                        if (int.TryParse(restrictedProduct, out int restrictedProductId))
+                        if (int.TryParse(restrictedProduct, out var restrictedProductId))
                         {
                             if (sci.ProductId == restrictedProductId)
                             {
@@ -176,14 +178,9 @@ namespace Nop.Plugin.DiscountRules.HasOneProduct
         public string GetConfigurationUrl(int discountId, int? discountRequirementId)
         {
             var urlHelper = _urlHelperFactory.GetUrlHelper(_actionContextAccessor.ActionContext);
-            var url = new PathString(urlHelper.Action("Configure", "DiscountRulesHasOneProduct",
-                new { discountId = discountId, discountRequirementId = discountRequirementId }));
 
-            //remove the application path from the generated URL if exists
-            var pathBase = _actionContextAccessor.ActionContext?.HttpContext?.Request?.PathBase ?? PathString.Empty;
-            url.StartsWithSegments(pathBase, out url);
-
-            return url.Value.TrimStart('/');
+            return urlHelper.Action("Configure", "DiscountRulesHasOneProduct",
+                new { discountId = discountId, discountRequirementId = discountRequirementId }, _webHelper.CurrentRequestProtocol);
         }
 
         /// <summary>

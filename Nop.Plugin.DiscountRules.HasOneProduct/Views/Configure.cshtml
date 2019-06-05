@@ -22,7 +22,7 @@
                 type: "POST",
                 url: "@(Url.Action("Configure", "DiscountRulesHasOneProduct"))",
                 data: postData,
-                success: function (data) {
+                success: function (data, textStatus, jqXHR) {
                     $('#pnl-save-requirement-result@(Model.RequirementId)').fadeIn("slow").delay(1000).fadeOut("slow");
                     //notify parent if it's a new requirement
                     @if (Model.RequirementId == 0)
@@ -30,8 +30,8 @@
                         <text>$("#discountRequirementContainer").trigger('nopnewdiscountruleadded', [data.NewRequirementId]);</text>
                     }
                 },
-                error:function (xhr, ajaxOptions, thrownError){
-                    alert('@Html.Raw(JavaScriptEncoder.Default.Encode(T("Admin.Promotions.Discounts.Requirements.FailedToSave").Text))');
+                error: function (jqXHR, textStatus, errorThrown) {
+                    $("#saveHasOneProductrequirementAlert").click();
                 }
             });
         });
@@ -40,24 +40,24 @@
 
 <div class="form-group">
     <div class="col-md-3 requirement-label-col">
-        <nop-label asp-for="Products"/>
+        <nop-label asp-for="Products" />
     </div>
     <div class="col-md-9 requirement-data-col">
         <div class="requirement-data-input">
             <div class="input-group">
-                <nop-editor asp-for="Products"/>
+                <nop-editor asp-for="Products" />
                 <div class="input-group-btn">
                     <input type="submit"
                            id="btnAddNewDiscountRequirementProduct@(Model.RequirementId)"
                            value="@T("Plugins.DiscountRules.HasOneProduct.Fields.Products.AddNew")"
                            onclick="javascript:OpenWindow('@Url.Action("ProductAddPopup", "DiscountRulesHasOneProduct", new {btnId = $"btnRefreshDiscountRequirementProducts{Model.RequirementId}", productIdsInput = Html.IdFor(model => model.Products)})', 800, 850, true); return false;"
-                           class="btn btn-info"/>
-                    <input type="submit" id="btnRefreshDiscountRequirementProducts@(Model.RequirementId)" style="display: none"/>
+                           class="btn btn-info" />
+                    <input type="submit" id="btnRefreshDiscountRequirementProducts@(Model.RequirementId)" style="display: none" />
                 </div>
             </div>
         </div>
         <div class="requirement-data-buttons">
-            <input type="button" id="saveHasOneProductrequirement@(Model.RequirementId)" class="btn btn-primary" value="@T("Admin.Common.Save")"/>
+            <input type="button" id="saveHasOneProductrequirement@(Model.RequirementId)" class="btn btn-primary" value="@T("Admin.Common.Save")" />
         </div>
     </div>
 </div>
@@ -72,6 +72,7 @@
         </div>
     </div>
 </div>
+<nop-alert asp-alert-id="saveHasOneProductrequirementAlert" asp-alert-message="@T("Admin.Promotions.Discounts.Requirements.FailedToSave")" />
 
 <script type="text/javascript">
     $(document).ready(function() {
