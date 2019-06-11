@@ -2,16 +2,12 @@
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.AspNetCore.Mvc;
-using Nop.Core;
 using Nop.Core.Domain.Discounts;
 using Nop.Plugin.DiscountRules.HasOneProduct.Models;
 using Nop.Services.Catalog;
 using Nop.Services.Configuration;
 using Nop.Services.Discounts;
-using Nop.Services.Localization;
 using Nop.Services.Security;
-using Nop.Services.Stores;
-using Nop.Services.Vendors;
 using Nop.Web.Areas.Admin.Factories;
 using Nop.Web.Areas.Admin.Models.Catalog;
 using Nop.Web.Framework;
@@ -26,45 +22,27 @@ namespace Nop.Plugin.DiscountRules.HasOneProduct.Controllers
     {
         #region Fields
 
-        private readonly ICategoryService _categoryService;
         private readonly IDiscountService _discountService;
-        private readonly ILocalizationService _localizationService;
-        private readonly IManufacturerService _manufacturerService;
         private readonly IPermissionService _permissionService;
         private readonly IProductModelFactory _productModelFactory;
         private readonly IProductService _productService;
         private readonly ISettingService _settingService;
-        private readonly IStoreService _storeService;
-        private readonly IVendorService _vendorService;
-        private readonly IWorkContext _workContext;
 
         #endregion
 
         #region Ctor
 
-        public DiscountRulesHasOneProductController(ICategoryService categoryService,
-            IDiscountService discountService,
-            ILocalizationService localizationService,
-            IManufacturerService manufacturerService,
+        public DiscountRulesHasOneProductController(IDiscountService discountService,
             IPermissionService permissionService,
             IProductModelFactory productModelFactory,
             IProductService productService,
-            ISettingService settingService,
-            IStoreService storeService,
-            IVendorService vendorService,
-            IWorkContext workContext)
+            ISettingService settingService)
         {
-            _categoryService = categoryService;
             _discountService = discountService;
-            _localizationService = localizationService;
-            _manufacturerService = manufacturerService;
             _permissionService = permissionService;
             _productModelFactory = productModelFactory;
             _productService = productService;
             _settingService = settingService;
-            _storeService = storeService;
-            _vendorService = vendorService;
-            _workContext = workContext;
         }
 
         #endregion
@@ -142,7 +120,7 @@ namespace Nop.Plugin.DiscountRules.HasOneProduct.Controllers
             //prepare model
             var model = _productModelFactory.PrepareProductSearchModel(new ProductSearchModel());
 
-            return View("~/Plugins/DiscountRules.PurchasedAllProducts/Views/ProductAddPopup.cshtml", model);
+            return View("~/Plugins/DiscountRules.HasOneProduct/Views/ProductAddPopup.cshtml", model);
         }
 
         [HttpPost]

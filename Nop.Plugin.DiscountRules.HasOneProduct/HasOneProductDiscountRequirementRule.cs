@@ -88,7 +88,9 @@ namespace Nop.Plugin.DiscountRules.HasOneProduct
             //group products in the cart by product ID
             //it could be the same product with distinct product attributes
             //that's why we get the total quantity of this product            
-            var cart = _shoppingCartService.GetShoppingCart(customer: request.Customer, shoppingCartType: ShoppingCartType.ShoppingCart, storeId: request.Store.Id);
+            var cart = _shoppingCartService.GetShoppingCart(customer: request.Customer, shoppingCartType: ShoppingCartType.ShoppingCart, storeId: request.Store.Id)
+                .GroupBy(sci => sci.ProductId)
+                .Select(g => new { ProductId = g.Key, TotalQuantity = g.Sum(x => x.Quantity) });
 
             //process
             var found = false;
@@ -115,7 +117,7 @@ namespace Nop.Plugin.DiscountRules.HasOneProduct
                                 //parsing error; exit;
                                 return result;
 
-                            if (sci.ProductId == restrictedProductId && quantityMin <= sci.Quantity && sci.Quantity <= quantityMax)
+                            if (sci.ProductId == restrictedProductId && quantityMin <= sci.TotalQuantity && sci.TotalQuantity <= quantityMax)
                             {
                                 found = true;
                                 break;
@@ -132,7 +134,7 @@ namespace Nop.Plugin.DiscountRules.HasOneProduct
                                 //parsing error; exit;
                                 return result;
 
-                            if (sci.ProductId == restrictedProductId && sci.Quantity == quantity)
+                            if (sci.ProductId == restrictedProductId && sci.TotalQuantity == quantity)
                             {
                                 found = true;
                                 break;

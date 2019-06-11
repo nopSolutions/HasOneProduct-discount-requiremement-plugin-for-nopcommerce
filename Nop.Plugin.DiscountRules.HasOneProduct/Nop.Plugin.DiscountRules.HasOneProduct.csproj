@@ -6,8 +6,8 @@
     <Company>Nop Solutions, Ltd</Company>
     <Authors>Nop Solutions, Ltd</Authors>
     <PackageLicenseUrl></PackageLicenseUrl>
-    <PackageProjectUrl>http://www.nopcommerce.com/</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/nopSolutions/nopCommerce</RepositoryUrl>
+    <PackageProjectUrl>https://www.nopcommerce.com/p/2980/has-one-product-discount-requirement-rule-nopcommerce-team.aspx</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/nopSolutions/HasOneProduct-discount-requiremement-plugin-for-nopcommerce</RepositoryUrl>
     <RepositoryType>Git</RepositoryType>
     <OutputPath>..\..\Presentation\Nop.Web\Plugins\DiscountRules.HasOneProduct</OutputPath>
     <OutDir>$(OutputPath)</OutDir>

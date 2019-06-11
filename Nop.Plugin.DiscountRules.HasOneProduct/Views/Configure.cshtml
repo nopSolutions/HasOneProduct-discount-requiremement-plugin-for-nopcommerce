@@ -115,12 +115,12 @@
                 url: '@Url.Action("LoadProductFriendlyNames", "DiscountRulesHasOneProduct")',
                 data: postData,
                 dataType: 'json',
-                success: function(data) {
+                success: function (data, textStatus, jqXHR) {
                     $('#discountrequirement-products-check-progress@(Model.RequirementId)').hide();
                     $('#discountrequirement-product-names@(Model.RequirementId)').text(data.Text);
                     $('#discountrequirement-product-names@(Model.RequirementId)').addClass('filled');
                 },
-                failure: function() {
+                error: function (jqXHR, textStatus, errorThrown) {
                     $('#discountrequirement-products-check-progress@(Model.RequirementId)').hide();
                     $('#discountrequirement-product-names@(Model.RequirementId)').text('');
                     $('#discountrequirement-product-names@(Model.RequirementId)').removeClass('filled');
