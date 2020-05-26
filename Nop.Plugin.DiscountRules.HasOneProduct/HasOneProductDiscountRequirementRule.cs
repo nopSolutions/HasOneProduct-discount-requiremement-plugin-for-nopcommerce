@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
@@ -191,10 +192,16 @@ namespace Nop.Plugin.DiscountRules.HasOneProduct
         public override void Install()
         {
             //locales
-            _localizationService.AddOrUpdatePluginLocaleResource("Plugins.DiscountRules.HasOneProduct.Fields.Products", "Restricted products [and quantity range]");
-            _localizationService.AddOrUpdatePluginLocaleResource("Plugins.DiscountRules.HasOneProduct.Fields.Products.Hint", "The comma-separated list of product identifiers (e.g. 77, 123, 156). You can find a product ID on its details page. You can also specify the comma-separated list of product identifiers with quantities ({Product ID}:{Quantity}. for example, 77:1, 123:2, 156:3). And you can also specify the comma-separated list of product identifiers with quantity range ({Product ID}:{Min quantity}-{Max quantity}. for example, 77:1-3, 123:2-5, 156:3-8).");
-            _localizationService.AddOrUpdatePluginLocaleResource("Plugins.DiscountRules.HasOneProduct.Fields.Products.AddNew", "Add product");
-            _localizationService.AddOrUpdatePluginLocaleResource("Plugins.DiscountRules.HasOneProduct.Fields.Products.Choose", "Choose");
+            _localizationService.AddPluginLocaleResource(new Dictionary<string, string>
+            {
+                ["Plugins.DiscountRules.HasOneProduct.Fields.Products"] = "Restricted products [and quantity range]",
+                ["Plugins.DiscountRules.HasOneProduct.Fields.Products.Hint"] = "The comma-separated list of product identifiers (e.g. 77, 123, 156). You can find a product ID on its details page. You can also specify the comma-separated list of product identifiers with quantities ({Product ID}:{Quantity}. for example, 77:1, 123:2, 156:3). And you can also specify the comma-separated list of product identifiers with quantity range ({Product ID}:{Min quantity}-{Max quantity}. for example, 77:1-3, 123:2-5, 156:3-8).",
+                ["Plugins.DiscountRules.HasOneProduct.Fields.Products.AddNew"] = "Add product",
+                ["Plugins.DiscountRules.HasOneProduct.Fields.Products.Choose"] = "Choose",
+                ["Plugins.DiscountRules.HasOneProduct.Fields.ProductIds.Required"] = "Products are required",
+                ["Plugins.DiscountRules.HasOneProduct.Fields.DiscountId.Required"] = "Discount is required",
+                ["Plugins.DiscountRules.HasOneProduct.Fields.ProductIds.InvalidFormat"] = "Invalid format for products selection. Format should be comma-separated list of product identifiers (e.g. 77, 123, 156). You can find a product ID on its details page. You can also specify the comma-separated list of product identifiers with quantities ({Product ID}:{Quantity}. for example, 77:1, 123:2, 156:3). And you can also specify the comma-separated list of product identifiers with quantity range ({Product ID}:{Min quantity}-{Max quantity}. for example, 77:1-3, 123:2-5, 156:3-8)."
+            });
 
             base.Install();
         }
@@ -209,14 +216,11 @@ namespace Nop.Plugin.DiscountRules.HasOneProduct
                 .Where(discountRequirement => discountRequirement.DiscountRequirementRuleSystemName == DiscountRequirementDefaults.SystemName);
             foreach (var discountRequirement in discountRequirements)
             {
-                _discountService.DeleteDiscountRequirement(discountRequirement);
+                _discountService.DeleteDiscountRequirement(discountRequirement, false);
             }
 
             //locales
-            _localizationService.DeletePluginLocaleResource("Plugins.DiscountRules.HasOneProduct.Fields.Products");
-            _localizationService.DeletePluginLocaleResource("Plugins.DiscountRules.HasOneProduct.Fields.Products.Hint");
-            _localizationService.DeletePluginLocaleResource("Plugins.DiscountRules.HasOneProduct.Fields.Products.AddNew");
-            _localizationService.DeletePluginLocaleResource("Plugins.DiscountRules.HasOneProduct.Fields.Products.Choose");
+            _localizationService.DeletePluginLocaleResources("Plugins.DiscountRules.HasOneProduct");
 
             base.Uninstall();
         }

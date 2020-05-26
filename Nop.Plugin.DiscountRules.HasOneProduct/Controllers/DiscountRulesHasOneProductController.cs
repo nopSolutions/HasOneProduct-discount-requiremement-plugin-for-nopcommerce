@@ -18,6 +18,7 @@ namespace Nop.Plugin.DiscountRules.HasOneProduct.Controllers
 {
     [AuthorizeAdmin]
     [Area(AreaNames.Admin)]
+    [AutoValidateAntiforgeryToken]
     public class DiscountRulesHasOneProductController : BasePluginController
     {
         #region Fields
@@ -60,7 +61,7 @@ namespace Nop.Plugin.DiscountRules.HasOneProduct.Controllers
                 throw new ArgumentException("Discount could not be loaded");
 
             //check whether the discount requirement exists
-            if (discountRequirementId.HasValue && !discount.DiscountRequirements.Any(requirement => requirement.Id == discountRequirementId.Value))
+            if (discountRequirementId.HasValue && _discountService.GetDiscountRequirementById(discountRequirementId.Value) is null)
                 return Content("Failed to load requirement.");
 
             //try to get previously saved restricted product identifiers
@@ -70,7 +71,7 @@ namespace Nop.Plugin.DiscountRules.HasOneProduct.Controllers
             {
                 RequirementId = discountRequirementId ?? 0,
                 DiscountId = discountId,
-                Products = restrictedProductIds
+                ProductIds = restrictedProductIds
             };
 
             //set the HTML field prefix
@@ -80,36 +81,40 @@ namespace Nop.Plugin.DiscountRules.HasOneProduct.Controllers
         }
 
         [HttpPost]
-        [AdminAntiForgery]
-        public IActionResult Configure(int discountId, int? discountRequirementId, string productIds)
+        public IActionResult Configure(RequirementModel model)
         {
             if (!_permissionService.Authorize(StandardPermissionProvider.ManageDiscounts))
                 return Content("Access denied");
 
-            //load the discount
-            var discount = _discountService.GetDiscountById(discountId);
-            if (discount == null)
-                throw new ArgumentException("Discount could not be loaded");
-
-            //get the discount requirement
-            var discountRequirement = discountRequirementId.HasValue
-                ? discount.DiscountRequirements.FirstOrDefault(requirement => requirement.Id == discountRequirementId.Value) : null;
-
-            //the discount requirement does not exist, so create a new one
-            if (discountRequirement == null)
+            if (ModelState.IsValid)
             {
-                discountRequirement = new DiscountRequirement
+                //load the discount
+                var discount = _discountService.GetDiscountById(model.DiscountId);
+                if (discount == null)
+                    return NotFound(new { Errors = new[] { "Discount could not be loaded" } });
+
+                //get the discount requirement
+                var discountRequirement = _discountService.GetDiscountRequirementById(model.RequirementId);
+
+                //the discount requirement does not exist, so create a new one
+                if (discountRequirement == null)
                 {
-                    DiscountRequirementRuleSystemName = DiscountRequirementDefaults.SystemName
-                };
-                discount.DiscountRequirements.Add(discountRequirement);
-                _discountService.UpdateDiscount(discount);
+                    discountRequirement = new DiscountRequirement
+                    {
+                        DiscountId = discount.Id,
+                        DiscountRequirementRuleSystemName = DiscountRequirementDefaults.SystemName
+                    };
+
+                    _discountService.InsertDiscountRequirement(discountRequirement);
+                }
+
+                //save restricted product identifiers
+                _settingService.SetSetting(string.Format(DiscountRequirementDefaults.SettingsKey, discountRequirement.Id), model.ProductIds);
+
+                return Ok(new { NewRequirementId = discountRequirement.Id });
             }
 
-            //save restricted product identifiers
-            _settingService.SetSetting(string.Format(DiscountRequirementDefaults.SettingsKey, discountRequirement.Id), productIds);
-
-            return Json(new { Result = true, NewRequirementId = discountRequirement.Id });
+            return BadRequest(new { Errors = GetErrorsFromModelState() });
         }
 
         public IActionResult ProductAddPopup()
@@ -124,7 +129,6 @@ namespace Nop.Plugin.DiscountRules.HasOneProduct.Controllers
         }
 
         [HttpPost]
-        [AdminAntiForgery]
         public IActionResult LoadProductFriendlyNames(string productIds)
         {
             if (!_permissionService.Authorize(StandardPermissionProvider.ManageProducts))
@@ -164,6 +168,15 @@ namespace Nop.Plugin.DiscountRules.HasOneProduct.Controllers
             }
 
             return Json(new { Text = result });
+        }
+
+        #endregion
+
+        #region Utilities
+
+        private IEnumerable<string> GetErrorsFromModelState()
+        {
+            return ModelState.Values.SelectMany(v => v.Errors.Select(e => e.ErrorMessage));
         }
 
         #endregion

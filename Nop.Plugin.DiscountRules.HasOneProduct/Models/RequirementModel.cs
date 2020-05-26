@@ -9,6 +9,6 @@ namespace Nop.Plugin.DiscountRules.HasOneProduct.Models
         public int RequirementId { get; set; }
 
         [NopResourceDisplayName("Plugins.DiscountRules.HasOneProduct.Fields.Products")]
-        public string Products { get; set; }
+        public string ProductIds { get; set; }
     }
 }
