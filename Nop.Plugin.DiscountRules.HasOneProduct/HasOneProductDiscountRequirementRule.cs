@@ -65,7 +65,7 @@ namespace Nop.Plugin.DiscountRules.HasOneProduct
             var result = new DiscountRequirementValidationResult();
 
             //try to get saved restricted product identifiers
-            var restrictedProductIds = _settingService.GetSettingByKey<string>(string.Format(DiscountRequirementDefaults.SettingsKey, request.DiscountRequirementId));
+            var restrictedProductIds = _settingService.GetSettingByKey<string>(string.Format(DiscountRequirementDefaults.SETTINGS_KEY, request.DiscountRequirementId));
             if (string.IsNullOrWhiteSpace(restrictedProductIds))
             {
                 //valid
@@ -213,7 +213,7 @@ namespace Nop.Plugin.DiscountRules.HasOneProduct
         {
             //discount requirements
             var discountRequirements = _discountService.GetAllDiscountRequirements()
-                .Where(discountRequirement => discountRequirement.DiscountRequirementRuleSystemName == DiscountRequirementDefaults.SystemName);
+                .Where(discountRequirement => discountRequirement.DiscountRequirementRuleSystemName == DiscountRequirementDefaults.SYSTEM_NAME);
             foreach (var discountRequirement in discountRequirements)
             {
                 _discountService.DeleteDiscountRequirement(discountRequirement, false);

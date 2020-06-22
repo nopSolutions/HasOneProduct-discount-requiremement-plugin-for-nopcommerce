@@ -1,7 +1,8 @@
 ﻿nopCommerce DiscountRules.HasOneProduct plugin
 ===========
-nopCommerce plugin for "Has one product in the cart" discount requirement
+This plugin allows you to configure discounts for customers who have at least one of the specified products in the cart.
 
+Discount requirement rule is a logical dependency in nopCommerce discount module that defines whether a discount applies or not, according to its conditions.
 
 nopCommerce site: [https://www.nopcommerce.com](https://www.nopcommerce.com)
 

@@ -38,7 +38,7 @@ namespace Nop.Plugin.DiscountRules.HasOneProduct.Infrastructure.Cache
                 return;
 
             //delete saved restricted product identifiers if exist
-            var setting = _settingService.GetSetting(string.Format(DiscountRequirementDefaults.SettingsKey, discountRequirement.Id));
+            var setting = _settingService.GetSetting(string.Format(DiscountRequirementDefaults.SETTINGS_KEY, discountRequirement.Id));
             if (setting != null)
                 _settingService.DeleteSetting(setting);
         }

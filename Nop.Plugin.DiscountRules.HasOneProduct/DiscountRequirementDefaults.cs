@@ -9,16 +9,16 @@ namespace Nop.Plugin.DiscountRules.HasOneProduct
         /// <summary>
         /// The HTML field prefix for discount requirements
         /// </summary>
-        public const string HtmlFieldPrefix = "DiscountRulesHasOneProduct{0}";
+        public const string HTML_FIELD_PREFIX = "DiscountRulesHasOneProduct{0}";
 
         /// <summary>
         /// The key of the settings to save restricted product identifiers
         /// </summary>
-        public const string SettingsKey = "DiscountRequirement.RestrictedProductIds-{0}";
+        public const string SETTINGS_KEY = "DiscountRequirement.RestrictedProductIds-{0}";
 
         /// <summary>
         /// The system name of the discount requirement rule
         /// </summary>
-        public const string SystemName = "DiscountRequirement.HasOneProduct";
+        public const string SYSTEM_NAME = "DiscountRequirement.HasOneProduct";
     }
 }
