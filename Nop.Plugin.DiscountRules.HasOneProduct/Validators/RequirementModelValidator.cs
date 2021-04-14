@@ -15,13 +15,13 @@ namespace Nop.Plugin.DiscountRules.HasOneProduct.Validators
         {
             RuleFor(model => model.DiscountId)
                 .NotEmpty()
-                .WithMessage(localizationService.GetResource("Plugins.DiscountRules.HasOneProduct.Fields.DiscountId.Required"));
+                .WithMessageAwait(localizationService.GetResourceAsync("Plugins.DiscountRules.HasOneProduct.Fields.DiscountId.Required"));
             RuleFor(model => model.ProductIds)
                 .NotEmpty()
-                .WithMessage(localizationService.GetResource("Plugins.DiscountRules.HasOneProduct.Fields.ProductIds.Required"));
+                .WithMessageAwait(localizationService.GetResourceAsync("Plugins.DiscountRules.HasOneProduct.Fields.ProductIds.Required"));
             RuleFor(model => model.ProductIds)
                 .Must(value => !Regex.IsMatch(value, @"(?!\d+)(?:[^ ,:-])"))
-                .WithMessage(localizationService.GetResource("Plugins.DiscountRules.HasOneProduct.Fields.ProductIds.InvalidFormat"))
+                .WithMessageAwait(localizationService.GetResourceAsync("Plugins.DiscountRules.HasOneProduct.Fields.ProductIds.InvalidFormat"))
                 .When(model => !string.IsNullOrWhiteSpace(model.ProductIds));
         }
     }
