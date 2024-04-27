@@ -4,8 +4,8 @@
 }
 
 <script type="text/javascript">
-    $(document).ready(function () {
-        $('#saveHasOneProductrequirement@(Model.RequirementId)').click(function () {
+    $(function () {
+        $('#saveHasOneProductrequirement@(Model.RequirementId)').on("click", function() {
             var productIds = $("#@Html.IdFor(model => model.ProductIds)").val();
             var discountId = @Model.DiscountId;
             var requirementId = @Model.RequirementId;
@@ -46,7 +46,7 @@
                         $alertInfoEl.html('@T("Admin.Promotions.Discounts.Requirements.FailedToSave")');
                     }
 
-                    $("#saveHasOneProductrequirementAlert").click();
+                    $("#saveHasOneProductrequirementAlert").trigger("click");
                 }
             });
         });
@@ -90,8 +90,8 @@
 <nop-alert asp-alert-id="saveHasOneProductrequirementAlert" />
 
 <script type="text/javascript">
-    $(document).ready(function() {
-        $('#btnRefreshDiscountRequirementProducts@(Model.RequirementId)').click(function() {
+    $(function() {
+        $('#btnRefreshDiscountRequirementProducts@(Model.RequirementId)').on("click", function() {
             //refresh product list
             loadDiscountRequirementProductFriendlyNames@(Model.RequirementId)();
 
@@ -100,10 +100,10 @@
         });
     });
 
-    $(document).ready(function() {
+    $(function() {
         loadDiscountRequirementProductFriendlyNames@(Model.RequirementId)();
     });
-    $(document).ready(function() {
+    $(function() {
         $('#@Html.IdFor(model => model.ProductIds)')
             .data('timeout', null)
             .keyup(function() {
