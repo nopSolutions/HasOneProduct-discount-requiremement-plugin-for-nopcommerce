@@ -20,26 +20,23 @@ public class DiscountRulesHasOneProductController : BasePluginController
 {
     #region Fields
 
+    private const char _idsSeparator = ',';
+    private const char _quantitySeparator = ':';
     private readonly IDiscountService _discountService;
-    private readonly IPermissionService _permissionService;
     private readonly IProductModelFactory _productModelFactory;
     private readonly IProductService _productService;
     private readonly ISettingService _settingService;
-    private static readonly char[] _idsSeparator = new[] { ',' };
-    private static readonly char[] _quantitySeparator = new[] { ':' };
 
     #endregion
 
     #region Ctor
 
     public DiscountRulesHasOneProductController(IDiscountService discountService,
-        IPermissionService permissionService,
         IProductModelFactory productModelFactory,
         IProductService productService,
         ISettingService settingService)
     {
         _discountService = discountService;
-        _permissionService = permissionService;
         _productModelFactory = productModelFactory;
         _productService = productService;
         _settingService = settingService;
@@ -47,13 +44,20 @@ public class DiscountRulesHasOneProductController : BasePluginController
 
     #endregion
 
+    #region Utilities
+
+    private IEnumerable<string> GetErrorsFromModelState()
+    {
+        return ModelState.Values.SelectMany(v => v.Errors.Select(e => e.ErrorMessage));
+    }
+
+    #endregion
+
     #region Methods
 
+    [CheckPermission(StandardPermission.Promotions.DISCOUNTS_VIEW)]
     public async Task<IActionResult> Configure(int discountId, int? discountRequirementId)
     {
-        if (!await _permissionService.AuthorizeAsync(StandardPermissionProvider.ManageDiscounts))
-            return Content("Access denied");
-
         //load the discount
         var discount = await _discountService.GetDiscountByIdAsync(discountId) ?? throw new ArgumentException("Discount could not be loaded");
 
@@ -78,47 +82,41 @@ public class DiscountRulesHasOneProductController : BasePluginController
     }
 
     [HttpPost]
+    [CheckPermission(StandardPermission.Promotions.DISCOUNTS_CREATE_EDIT_DELETE)]
     public async Task<IActionResult> Configure(RequirementModel model)
     {
-        if (!await _permissionService.AuthorizeAsync(StandardPermissionProvider.ManageDiscounts))
-            return Content("Access denied");
+        if (!ModelState.IsValid)
+            return BadRequest(new { Errors = GetErrorsFromModelState() });
 
-        if (ModelState.IsValid)
+        //load the discount
+        var discount = await _discountService.GetDiscountByIdAsync(model.DiscountId);
+        if (discount == null)
+            return NotFound(new { Errors = new[] { "Discount could not be loaded" } });
+
+        //get the discount requirement
+        var discountRequirement = await _discountService.GetDiscountRequirementByIdAsync(model.RequirementId);
+
+        //the discount requirement does not exist, so create a new one
+        if (discountRequirement == null)
         {
-            //load the discount
-            var discount = await _discountService.GetDiscountByIdAsync(model.DiscountId);
-            if (discount == null)
-                return NotFound(new { Errors = new[] { "Discount could not be loaded" } });
-
-            //get the discount requirement
-            var discountRequirement = await _discountService.GetDiscountRequirementByIdAsync(model.RequirementId);
-
-            //the discount requirement does not exist, so create a new one
-            if (discountRequirement == null)
+            discountRequirement = new DiscountRequirement
             {
-                discountRequirement = new DiscountRequirement
-                {
-                    DiscountId = discount.Id,
-                    DiscountRequirementRuleSystemName = DiscountRequirementDefaults.SYSTEM_NAME
-                };
+                DiscountId = discount.Id,
+                DiscountRequirementRuleSystemName = DiscountRequirementDefaults.SYSTEM_NAME
+            };
 
-                await _discountService.InsertDiscountRequirementAsync(discountRequirement);
-            }
-
-            //save restricted product identifiers
-            await _settingService.SetSettingAsync(string.Format(DiscountRequirementDefaults.SETTINGS_KEY, discountRequirement.Id), model.ProductIds);
-
-            return Ok(new { NewRequirementId = discountRequirement.Id });
+            await _discountService.InsertDiscountRequirementAsync(discountRequirement);
         }
 
-        return BadRequest(new { Errors = GetErrorsFromModelState() });
+        //save restricted product identifiers
+        await _settingService.SetSettingAsync(string.Format(DiscountRequirementDefaults.SETTINGS_KEY, discountRequirement.Id), model.ProductIds);
+
+        return Ok(new { NewRequirementId = discountRequirement.Id });
     }
 
+    [CheckPermission(StandardPermission.Catalog.PRODUCTS_VIEW)]
     public async Task<IActionResult> ProductAddPopup()
     {
-        if (!await _permissionService.AuthorizeAsync(StandardPermissionProvider.ManageProducts))
-            return AccessDeniedView();
-
         //prepare model
         var model = await _productModelFactory.PrepareProductSearchModelAsync(new ProductSearchModel());
 
@@ -126,15 +124,13 @@ public class DiscountRulesHasOneProductController : BasePluginController
     }
 
     [HttpPost]
+    [CheckPermission(StandardPermission.Catalog.PRODUCTS_VIEW)]
     public async Task<IActionResult> LoadProductFriendlyNames(string productIds)
     {
-        if (!await _permissionService.AuthorizeAsync(StandardPermissionProvider.ManageProducts))
-            return Json(new { Text = string.Empty });
-
         if (string.IsNullOrWhiteSpace(productIds))
             return Json(new { Text = string.Empty });
 
-        var ids = new List<int>();
+        var parsedIds = new List<int>();
         var rangeArray = productIds.Split(_idsSeparator, StringSplitOptions.RemoveEmptyEntries).Select(x => x.Trim()).ToList();
 
         //we support three ways of specifying products:
@@ -153,22 +149,13 @@ public class DiscountRulesHasOneProductController : BasePluginController
                 temp = productQuantityPair.Split(_quantitySeparator, StringSplitOptions.RemoveEmptyEntries)[0];
 
             if (int.TryParse(temp, out var productId))
-                ids.Add(productId);
+                parsedIds.Add(productId);
         }
 
-        var products = await _productService.GetProductsByIdsAsync(ids.ToArray());
+        var products = await _productService.GetProductsByIdsAsync(parsedIds.ToArray());
         var productNames = string.Join(", ", products.Select(p => p.Name));
 
         return Json(new { Text = productNames });
-    }
-
-    #endregion
-
-    #region Utilities
-
-    private IEnumerable<string> GetErrorsFromModelState()
-    {
-        return ModelState.Values.SelectMany(v => v.Errors.Select(e => e.ErrorMessage));
     }
 
     #endregion

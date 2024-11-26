@@ -15,6 +15,9 @@ public partial class HasOneProductDiscountRequirementRule : BasePlugin, IDiscoun
 {
     #region Fields
 
+    private const char _idsSeparator = ',';
+    private const char _quantitySeparator = ':';
+    private const char _maxQuantityMaxseparator = '-';
     private readonly IActionContextAccessor _actionContextAccessor;
     private readonly IDiscountService _discountService;
     private readonly ILocalizationService _localizationService;
@@ -22,9 +25,6 @@ public partial class HasOneProductDiscountRequirementRule : BasePlugin, IDiscoun
     private readonly IShoppingCartService _shoppingCartService;
     private readonly IUrlHelperFactory _urlHelperFactory;
     private readonly IWebHelper _webHelper;
-    private static readonly char[] _idsSeparator = [','];
-    private static readonly char[] _quantitySeparator = [':'];
-    private static readonly char[] _maxQuantityMaxseparator = ['-'];
 
     #endregion
 
@@ -104,9 +104,9 @@ public partial class HasOneProductDiscountRequirementRule : BasePlugin, IDiscoun
 
             foreach (var sci in cart)
             {
-                if (restrictedProduct.Contains(':'))
+                if (restrictedProduct.Contains(_quantitySeparator))
                 {
-                    if (restrictedProduct.Contains('-'))
+                    if (restrictedProduct.Contains(_maxQuantityMaxseparator))
                     {
                         //the third way (the quantity rage specified)
                         //{Product ID}:{Min quantity}-{Max quantity}. For example, 77:1-3, 123:2-5, 156:3-8
@@ -185,7 +185,7 @@ public partial class HasOneProductDiscountRequirementRule : BasePlugin, IDiscoun
         var urlHelper = _urlHelperFactory.GetUrlHelper(_actionContextAccessor.ActionContext);
 
         return urlHelper.Action("Configure", "DiscountRulesHasOneProduct",
-            new { discountId = discountId, discountRequirementId = discountRequirementId }, _webHelper.GetCurrentRequestProtocol());
+            new { discountId, discountRequirementId }, _webHelper.GetCurrentRequestProtocol());
     }
 
     /// <summary>
@@ -218,10 +218,9 @@ public partial class HasOneProductDiscountRequirementRule : BasePlugin, IDiscoun
         //discount requirements
         var discountRequirements = (await _discountService.GetAllDiscountRequirementsAsync())
             .Where(discountRequirement => discountRequirement.DiscountRequirementRuleSystemName == DiscountRequirementDefaults.SYSTEM_NAME);
+
         foreach (var discountRequirement in discountRequirements)
-        {
             await _discountService.DeleteDiscountRequirementAsync(discountRequirement, false);
-        }
 
         //locales
         await _localizationService.DeleteLocaleResourcesAsync("Plugins.DiscountRules.HasOneProduct");
