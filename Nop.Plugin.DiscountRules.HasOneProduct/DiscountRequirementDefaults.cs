@@ -20,4 +20,9 @@ public static class DiscountRequirementDefaults
     /// The system name of the discount requirement rule
     /// </summary>
     public const string SYSTEM_NAME = "DiscountRequirement.HasOneProduct";
+
+    /// <summary>
+    /// Gets the configuration route name
+    /// </summary>
+    public static string ConfigurationRouteName => "DiscountRequirement.HasOneProduct.Configure";
 }
